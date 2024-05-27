@@ -1,14 +1,17 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Tetris</title>
-  <style>
-    canvas { border: 1px solid black; }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Tetris</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <canvas id="gameCanvas" width="300" height="600"></canvas>
-  <script src="tetris.js"></script>
+  <div id="game-container">
+    <div id="board"></div>
+    <div id="score-box">Score: 0</div>
+    <div id="next-piece-box"></div>
+  </div>
+  <script src="game.js"></script>
 </body>
 </html>
