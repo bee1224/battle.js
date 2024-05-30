@@ -3,14 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Web Tetris</title>
+  <title>Tetris Battle</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div id="game-container">
-    <div id="board"></div>
-    <div id="score-box">Score: 0</div>
-    <div id="next-piece-box"></div>
+    <div id="player-container">
+      <div id="board"></div>
+      <div id="score-box">Score: 0</div>
+      <div id="next-piece-box"></div>
+    </div>
+    <div id="opponent-container">
+      <div id="opponent-board"></div>
+      <div id="opponent-score">Opponent Score: 0</div>
+      <div id="opponent-next-piece-box"></div>
+    </div>
   </div>
   <script src="game.js"></script>
 </body>

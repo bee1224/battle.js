@@ -1,81 +1,46 @@
 body {
-  margin: 0;
-  padding: 0;
+  font-family: Arial, sans-serif;
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #000;
-  color: white;
-  font-family: monospace;
+  margin: 0;
+  background-color: #f0f0f0;
 }
 
 #game-container {
   display: flex;
-  flex-direction: column;
-  align-items: center;
 }
 
-#board {
+#player-container, #opponent-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 10px;
+}
+
+#board, #opponent-board {
   display: grid;
   grid-template-columns: repeat(10, 20px);
   grid-template-rows: repeat(20, 20px);
   gap: 1px;
-}
-
-#next-piece-box {
-  display: grid;
-  grid-template-columns: repeat(4, 20px); /* 调整为4列 */
-  grid-template-rows: repeat(4, 20px); /* 调整为4行 */
-  gap: 1px;
-  margin-top: 20px;
-  padding: 10px;
-  border: 1px solid #f0f0f0;
-  background-color: black;
+  margin-bottom: 10px;
 }
 
 .cell {
   width: 20px;
   height: 20px;
-  background-color: #333; /* 默认背景颜色 */
+  background-color: #ccc;
 }
 
 .cell.active {
-  background-color: white; /* 活动格子默认颜色 */
+  background-color: #000;
 }
 
-/* 各个物件的颜色 */
-.cell.O {
-  background-color: yellow;
-}
-
-.cell.I {
-  background-color: cyan;
-}
-
-.cell.T {
-  background-color: purple;
-}
-
-.cell.L {
-  background-color: orange;
-}
-
-.cell.J {
-  background-color: blue;
-}
-
-.cell.S {
-  background-color: green;
-}
-
-.cell.Z {
-  background-color: red;
-}
-
-#score-box {
-  margin-top: 20px;
-  padding: 10px;
-  border: 1px solid #f0f0f0;
-  background-color: black;
+#next-piece-box, #opponent-next-piece-box {
+  display: grid;
+  grid-template-columns: repeat(4, 20px);
+  grid-template-rows: repeat(4, 20px);
+  gap: 1px;
+  margin-top: 10px;
 }
