@@ -1,29 +1,65 @@
 import { WebSocketServer, WebSocket } from 'ws';
 
 const server = new WebSocketServer({ port: 8080 });
-let clients = [];
+let rooms = {};
 
 server.on('connection', socket => {
   console.log('New client connected');
-  const clientId = clients.length;
-  clients.push({ id: clientId, socket });
 
-  // 监听客户端发送的消息
   socket.on('message', message => {
     const data = JSON.parse(message);
-    console.log(`Received message from client ${clientId}:`, data);
-    // 广播消息给其他客户端
-    clients.forEach(client => {
-      if (client.id !== clientId && client.socket.readyState === WebSocket.OPEN) {
-        client.socket.send(JSON.stringify({ id: clientId, data }));
+    const { action, room, board, score, nextPiece } = data;
+
+    if (action === 'create') {
+      if (!rooms[room]) {
+        rooms[room] = { players: [] };
       }
-    });
+      rooms[room].players.push(socket);
+      if (rooms[room].players.length > 2) {
+        socket.send(JSON.stringify({ type: 'error', message: 'Room is full' }));
+      } else {
+        socket.send(JSON.stringify({ type: 'joined', room }));
+        if (rooms[room].players.length === 2) {
+          rooms[room].players.forEach(player => {
+            player.send(JSON.stringify({ type: 'start' }));
+          });
+        }
+      }
+    } else if (action === 'join') {
+      if (rooms[room]) {
+        rooms[room].players.push(socket);
+        if (rooms[room].players.length > 2) {
+          socket.send(JSON.stringify({ type: 'error', message: 'Room is full' }));
+        } else {
+          socket.send(JSON.stringify({ type: 'joined', room }));
+          if (rooms[room].players.length === 2) {
+            rooms[room].players.forEach(player => {
+              player.send(JSON.stringify({ type: 'start' }));
+            });
+          }
+        }
+      } else {
+        socket.send(JSON.stringify({ type: 'error', message: 'Room does not exist' }));
+      }
+    } else if (action === 'update') {
+      if (rooms[room]) {
+        rooms[room].players.forEach(player => {
+          if (player !== socket && player.readyState === WebSocket.OPEN) {
+            player.send(JSON.stringify({ type: 'update', board, score, nextPiece }));
+          }
+        });
+      }
+    }
   });
 
-  // 处理客户端断开连接
   socket.on('close', () => {
-    console.log(`Client ${clientId} disconnected`);
-    clients = clients.filter(client => client.socket !== socket);
+    console.log('Client disconnected');
+    for (const room in rooms) {
+      rooms[room].players = rooms[room].players.filter(player => player !== socket);
+      if (rooms[room].players.length === 0) {
+        delete rooms[room];
+      }
+    }
   });
 });
 

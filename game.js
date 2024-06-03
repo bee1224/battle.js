@@ -1,4 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const roomId = urlParams.get('room');
+  const action = urlParams.get('action');
+
   const rows = 20;
   const cols = 10;
   const board = Array.from({ length: rows }, () => Array(cols).fill(0));
@@ -40,20 +44,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   socket.addEventListener('open', () => {
     console.log('Connected to WebSocket server');
+    socket.send(JSON.stringify({ action, room: roomId }));
   });
 
   socket.addEventListener('message', event => {
     const message = JSON.parse(event.data);
-    const { id, data } = message;
-
-    if (data.type === 'updateBoard') {
-      updateOpponentBoard(data.board, data.score, data.nextPiece);
+    if (message.type === 'update') {
+      updateOpponentBoard(message.board, message.score, message.nextPiece);
+    } else if (message.type === 'start') {
+      startGame();
     }
   });
 
   function sendGameState() {
     const gameState = {
-      type: 'updateBoard',
+      action: 'update',
+      room: roomId,
       board: board,
       score: score,
       nextPiece: nextPiece
@@ -231,94 +237,96 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  const gameInterval = setInterval(dropPiece, 1000);
+  function startGame() {
+    const gameInterval = setInterval(dropPiece, 1000);
 
-  document.addEventListener('keydown', event => {
-    if (event.key === 'ArrowLeft') {
-      const canMoveLeft = currentPiece.shape.every((row, r) => {
-        return row.every((cell, c) => {
-          if (!cell) return true;
-          const newCol = currentPiece.col + c - 1;
-          return newCol >= 0 && board[currentPiece.row + r][newCol] === 0;
+    document.addEventListener('keydown', event => {
+      if (event.key === 'ArrowLeft') {
+        const canMoveLeft = currentPiece.shape.every((row, r) => {
+          return row.every((cell, c) => {
+            if (!cell) return true;
+            const newCol = currentPiece.col + c - 1;
+            return newCol >= 0 && board[currentPiece.row + r][newCol] === 0;
+          });
         });
-      });
 
-      if (canMoveLeft) {
-        currentPiece.col--;
-        drawBoard();
-      }
-    } else if (event.key === 'ArrowRight') {
-      const canMoveRight = currentPiece.shape.every((row, r) => {
-        return row.every((cell, c) => {
-          if (!cell) return true;
-          const newCol = currentPiece.col + c + 1;
-          return newCol < cols && board[currentPiece.row + r][newCol] === 0;
+        if (canMoveLeft) {
+          currentPiece.col--;
+          drawBoard();
+        }
+      } else if (event.key === 'ArrowRight') {
+        const canMoveRight = currentPiece.shape.every((row, r) => {
+          return row.every((cell, c) => {
+            if (!cell) return true;
+            const newCol = currentPiece.col + c + 1;
+            return newCol < cols && board[currentPiece.row + r][newCol] === 0;
+          });
         });
-      });
 
-      if (canMoveRight) {
-        currentPiece.col++;
-        drawBoard();
-      }
-    } else if (event.key === 'ArrowUp') {
-      const newShape = currentPiece.shape[0].map((_, i) =>
-        currentPiece.shape.map(row => row[i]).reverse()
-      );
+        if (canMoveRight) {
+          currentPiece.col++;
+          drawBoard();
+        }
+      } else if (event.key === 'ArrowUp') {
+        const newShape = currentPiece.shape[0].map((_, i) =>
+          currentPiece.shape.map(row => row[i]).reverse()
+        );
 
-      const canRotate = newShape.every((row, r) => {
-        return row.every((cell, c) => {
-          if (!cell) return true;
-          const newRow = currentPiece.row + r;
-          const newCol = currentPiece.col + c;
-          return newRow < rows && newCol >= 0 && newCol < cols && board[newRow][newCol] === 0;
+        const canRotate = newShape.every((row, r) => {
+          return row.every((cell, c) => {
+            if (!cell) return true;
+            const newRow = currentPiece.row + r;
+            const newCol = currentPiece.col + c;
+            return newRow < rows && newCol >= 0 && newCol < cols && board[newRow][newCol] === 0;
+          });
         });
-      });
 
-      if (canRotate) {
-        currentPiece.shape = newShape;
-        drawBoard();
+        if (canRotate) {
+          currentPiece.shape = newShape;
+          drawBoard();
+        }
+      } else if (event.key === ' ') {
+        hardDropPiece();
+      } else if (event.key === 'ArrowDown') {
+        movePieceDown();
       }
-    } else if (event.key === ' ') {
-      hardDropPiece();
-    } else if (event.key === 'ArrowDown') {
-      movePieceDown();
-    }
 
-    drawBoard();
-  });
-
-  function hardDropPiece() {
-    while (currentPiece.shape.every((row, r) => {
-      return row.every((cell, c) => {
-        if (!cell) return true;
-        const newRow = currentPiece.row + r + 1;
-        const newCol = currentPiece.col + c;
-        return newRow < rows && board[newRow][newCol] === 0;
-      });
-    })) {
-      currentPiece.row++;
-    }
-    dropPiece();
-  }
-
-  function movePieceDown() {
-    const canMoveDown = currentPiece.shape.every((row, r) => {
-      return row.every((cell, c) => {
-        if (!cell) return true;
-        const newRow = currentPiece.row + r + 1;
-        const newCol = currentPiece.col + c;
-        return newRow < rows && board[newRow][newCol] === 0;
-      });
+      drawBoard();
     });
 
-    if (canMoveDown) {
-      currentPiece.row++;
-    } else {
+    function hardDropPiece() {
+      while (currentPiece.shape.every((row, r) => {
+        return row.every((cell, c) => {
+          if (!cell) return true;
+          const newRow = currentPiece.row + r + 1;
+          const newCol = currentPiece.col + c;
+          return newRow < rows && board[newRow][newCol] === 0;
+        });
+      })) {
+        currentPiece.row++;
+      }
       dropPiece();
     }
-    drawBoard();
-  }
 
-  drawBoard();
-  drawNextPiece();
+    function movePieceDown() {
+      const canMoveDown = currentPiece.shape.every((row, r) => {
+        return row.every((cell, c) => {
+          if (!cell) return true;
+          const newRow = currentPiece.row + r + 1;
+          const newCol = currentPiece.col + c;
+          return newRow < rows && board[newRow][newCol] === 0;
+        });
+      });
+
+      if (canMoveDown) {
+        currentPiece.row++;
+      } else {
+        dropPiece();
+      }
+      drawBoard();
+    }
+
+    drawBoard();
+    drawNextPiece();
+  }
 });
